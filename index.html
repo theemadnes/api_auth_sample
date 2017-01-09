@@ -1,0 +1,73 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Cognito Pool + API Gateway test</title>
+  <meta name="description" content="A basic tool to get auth creds for API Gateway">
+  <meta name="author" content="Alex Mattson">
+
+</head>
+
+<body>
+  <script src="js/jsbn.js"></script>
+  <script src="js/jsbn2.js"></script>
+  <script src="js/sjcl.js"></script>
+  <script src="js/moment.min.js"></script>
+  <script src="js/aws-cognito-sdk.min.js"></script>
+  <script src="js/amazon-cognito-identity.min.js"></script>
+  <form id="cognitoCredInfo">
+    Username:<br>
+    <input type="text" id="username"><br>
+    Password:<br>
+    <input type="password" id="password"><br>
+    Cognito user pool ID:<br>
+    <input type="text" id="poolid"><br>
+    Cognito app client ID:<br>
+    <input type="text" id="clientid">
+</form>
+  <button onclick="generateTokenFunction()">Click for ID token</button>
+  <div>Access token:</div>
+  <font color="blue"><div id="myAccessToken"></div></font>
+  <div>ID token:</div>
+  <font color="blue"><div id="myIdToken"></div></font>
+  <script>
+
+  function generateTokenFunction() {
+
+    var authenticationData = {
+        Username : document.getElementById('username').value,
+        Password : document.getElementById('password').value
+    };
+    var authenticationDetails = new AWSCognito.CognitoIdentityServiceProvider.AuthenticationDetails(authenticationData);
+    var poolData = { UserPoolId : document.getElementById('poolid').value,
+        ClientId : document.getElementById('clientid').value
+    };
+    var userPool = new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
+    var userData = {
+        Username : document.getElementById('username').value,
+        Pool : userPool
+    };
+    var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
+    cognitoUser.authenticateUser(authenticationDetails, {
+        onSuccess: function (result) {
+            console.log('access token + ' + result.getAccessToken().getJwtToken());
+            /*Use the idToken for Logins Map when Federating User Pools with Cognito Identity or when passing through an Authorization Header to an API Gateway Authorizer*/
+            console.log('idToken + ' + result.idToken.jwtToken);
+            accessElement = document.getElementById("myAccessToken");
+            accessElement.innerHTML = result.getAccessToken().getJwtToken();
+            idElement = document.getElementById("myIdToken");
+            idElement.innerHTML = result.idToken.jwtToken;
+            //alert('idToken + ' + result.idToken.jwtToken);
+        },
+
+        onFailure: function(err) {
+            alert(err);
+        },
+
+    });
+  }
+  </script>
+</body>
+</html>
